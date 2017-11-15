@@ -15,21 +15,21 @@ namespace Yun.Data {
     /// Used for text assets that store JSON data
     /// required by game
     /// </summary>
-    public class Resource {
+    public class Config {
 
         internal string Name { get; private set; }
         internal string Path { get; private set; }
 
         internal object obj;
 
-        public Resource(string filename, string path) {
+        public Config(string filename, string path) {
             Name = filename;
             Path = path;
         }
 
         public void Deserialize() {
             var asset = Resources.Load<TextAsset>(System.IO.Path.Combine(Path, Name));
-            obj = JsonConvert.DeserializeObject(asset.text) as object;
+            obj = JsonConvert.DeserializeObject(asset.text);
         }
     }
 }

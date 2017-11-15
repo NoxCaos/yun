@@ -5,7 +5,6 @@
 /// </summary>
 /// 
 
-using Newtonsoft.Json;
 using Yun.Tools;
 using System.Collections.Generic;
 using UnityEngine;
@@ -31,20 +30,20 @@ namespace Yun.Data {
         }
 
         private GameSave saveData;
-        private Dictionary<string, Resource> resources;
+        private Dictionary<string, Config> resources;
 
-        private Thread _gameSaving;
-
-        public DataManager(GameSave save, Resource[] res = null) {
-            resources = new Dictionary<string, Resource>();
+        public DataManager(GameSave save) {
             saveData = save;
+            Safe.Error += Error;
+        }
+
+        public DataManager(GameSave save, params Config[] res) : this(save) {
+            resources = new Dictionary<string, Config>();
             if(res != null) {
                 foreach(var r in res) {
                     resources.Add(r.Name, r);
                 }
             }
-
-            Safe.Error += Error;
         }
 
         /// <summary>
@@ -61,6 +60,17 @@ namespace Yun.Data {
         }
 
         /// <summary>
+        /// Loads save file
+        /// </summary>
+        /// <typeparam name="T">
+        /// Type of your save file
+        /// It has to extend GameSave class
+        /// </typeparam>
+        public void Load<T>() where T:GameSave {
+            Safe.Call(() => LoadUnsafe<T>());
+        }
+
+        /// <summary>
         /// Starts the preload of resources 
         /// </summary>
         public void PreloadResources() {
@@ -74,10 +84,10 @@ namespace Yun.Data {
         /// All errors will be logged to Unity Debug Log
         /// Subscribe to Error event if you want to handle them
         /// </param>
-        public void SaveAsync(Action callback) {
+        public void SaveAsync(Action callback = null) {
             ThreadWorker worker = new ThreadWorker(Save);
             worker.ThreadDone += (() => {
-                callback();
+                if(callback != null) callback();
             });
 
             var tr = new Thread(new ThreadStart(worker.Run));
@@ -121,6 +131,12 @@ namespace Yun.Data {
             foreach(var r in resources) {
                 r.Value.Deserialize();
             }
+        }
+
+        private void LoadUnsafe<T>() where T:GameSave {
+            var loaded = GameSave.Load<T>(saveData);
+            if(loaded != null)
+                saveData = loaded;
         }
 #endregion
     }

@@ -10,7 +10,6 @@ namespace Yun.Tools {
         public static bool Call(Expression<Action> callExp) {
             var methodCallExp = (MethodCallExpression)callExp.Body;
             var methodName = methodCallExp.Method.Name;
-            var classname = methodCallExp.Object.Type.Name;
 
             var call = callExp.Compile();
             try {
@@ -18,7 +17,7 @@ namespace Yun.Tools {
             } catch(Exception exc) {
 #if UNITY_EDITOR
                 Debug.LogError(
-                    string.Format("An Exception occured in 'Yun.{0}.{1}()'", classname, methodName));
+                    string.Format("An Exception occured in '{0}()'", methodName));
                 Debug.Log(exc);
 #endif
 

@@ -24,14 +24,23 @@ namespace Yun.Data {
         public string FileName { get; private set; }
 
 #if UNITY_EDITOR
-        private static readonly string PATH = UnityEngine.Application.dataPath + "../EditorSaves/";
+        private static readonly string PATH = UnityEngine.Application.dataPath + "/../EditorSaves/";
 #else
-        private static readonly string PATH = UnityEngine.Application.persistentDataPath + "save/";
+        private static readonly string PATH = UnityEngine.Application.persistentDataPath + "/save/";
 #endif
 
         public GameSave(string filename) {
             FileName = filename;
             IsFirstLaunch = !CheckDirectory(filename);
+        }
+
+        internal static T Load<T> (GameSave obj) where T:GameSave {
+            var data = "";
+            using(var reader = new StreamReader(Path.Combine(PATH, obj.FileName))) {
+                data = reader.ReadToEnd();
+            }
+
+            return JsonConvert.DeserializeObject(data) as T;
         }
 
         internal static void Save(GameSave obj) {
@@ -42,7 +51,7 @@ namespace Yun.Data {
                     "It probably has been removed manually while game was running");
             }
 
-            using(var writer = new StreamWriter(obj.FileName)) {
+            using(var writer = new StreamWriter(Path.Combine(PATH, obj.FileName))) {
                 writer.Write(serObj);
             }
         }
@@ -50,10 +59,12 @@ namespace Yun.Data {
         internal static bool CheckDirectory(string fileName) {
             if(!Directory.Exists(PATH)) {
                 Directory.CreateDirectory(PATH);
-                File.Create(Path.Combine(PATH, fileName));
+                var f = File.Create(Path.Combine(PATH, fileName));
+                f.Close();
                 return false;
             } else if(!File.Exists(Path.Combine(PATH, fileName))) {
-                File.Create(Path.Combine(PATH, fileName));
+                var f = File.Create(Path.Combine(PATH, fileName));
+                f.Close();
                 return false;
             }
             return true;
