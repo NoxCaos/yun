@@ -18,5 +18,10 @@ namespace Yun.Data {
 		}
 
 		public SerializableList () { }
-	}
+
+        public SerializableList(T[] array) {
+            foreach(var a in array)
+                Add(a);
+        }
+    }
 }

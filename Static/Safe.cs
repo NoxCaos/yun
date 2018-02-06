@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using UnityEngine;
 
-namespace Yun.Tools {
+namespace Yun.Static {
     public static class Safe {
 
         public static Action<Exception> Error;

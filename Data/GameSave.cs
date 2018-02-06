@@ -7,6 +7,7 @@
 
 using System.IO;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace Yun.Data {
 
@@ -18,9 +19,6 @@ namespace Yun.Data {
     public abstract class GameSave {
 
         [JsonIgnore]
-        public bool IsFirstLaunch { get; private set; }
-
-        [JsonIgnore]
         public string FileName { get; private set; }
 
 #if UNITY_EDITOR
@@ -29,25 +27,34 @@ namespace Yun.Data {
         private static readonly string PATH = UnityEngine.Application.persistentDataPath + "/save/";
 #endif
 
+        public GameSave() {  }
+
         public GameSave(string filename) {
             FileName = filename;
-            IsFirstLaunch = !CheckDirectory(filename);
         }
 
-        internal static T Load<T> (GameSave obj) where T:GameSave {
+        internal static T Load<T> (string file) where T:GameSave {
+            if(!CheckDirectory(file))
+                return null;
+
             var data = "";
-            using(var reader = new StreamReader(Path.Combine(PATH, obj.FileName))) {
+            using(var reader = new StreamReader(Path.Combine(PATH, file))) {
                 data = reader.ReadToEnd();
             }
 
-            return JsonConvert.DeserializeObject(data) as T;
+            var save = JsonConvert.DeserializeObject<T>(data);
+            if(save == null)
+                return null;
+
+            save.FileName = file;
+            return save;
         }
 
         internal static void Save(GameSave obj) {
             var serObj = JsonConvert.SerializeObject(obj);
 
             if(!CheckDirectory(obj.FileName)) {
-                UnityEngine.Debug.LogWarning("While saving game data file was not found. " +
+                Debug.LogWarning("While saving game data file was not found. " +
                     "It probably has been removed manually while game was running");
             }
 
@@ -57,6 +64,7 @@ namespace Yun.Data {
         }
 
         internal static bool CheckDirectory(string fileName) {
+            Debug.Log(fileName);
             if(!Directory.Exists(PATH)) {
                 Directory.CreateDirectory(PATH);
                 var f = File.Create(Path.Combine(PATH, fileName));

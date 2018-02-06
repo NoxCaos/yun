@@ -5,11 +5,12 @@
 /// </summary>
 /// 
 
-using Yun.Tools;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using System;
+using Yun.Async;
+using Yun.Static;
 
 namespace Yun.Data {
 
@@ -25,26 +26,24 @@ namespace Yun.Data {
     public sealed class DataManager {
 
         public Action<Exception> Error;
-        public bool IsFirstLaunch {
-            get { return saveData.IsFirstLaunch; }
-        }
 
         private GameSave saveData;
+        private string saveName;
         private Dictionary<string, Config> resources;
 
-        public DataManager(GameSave save) {
-            saveData = save;
+        public DataManager(string save) {
+            saveName = save;
             Safe.Error += Error;
         }
 
-        public DataManager(GameSave save, params Config[] res) : this(save) {
+        /*public DataManager(GameSave save, params Config[] res) : this(save) {
             resources = new Dictionary<string, Config>();
             if(res != null) {
                 foreach(var r in res) {
                     resources.Add(r.Name, r);
                 }
             }
-        }
+        }*/
 
         /// <summary>
         /// Destructor to unsubscribe all
@@ -59,6 +58,10 @@ namespace Yun.Data {
             Safe.Error -= Error;
         }
 
+        public void SetNewData(GameSave save) {
+            saveData = save;
+        }
+
         /// <summary>
         /// Loads save file
         /// </summary>
@@ -66,8 +69,8 @@ namespace Yun.Data {
         /// Type of your save file
         /// It has to extend GameSave class
         /// </typeparam>
-        public void Load<T>() where T:GameSave {
-            Safe.Call(() => LoadUnsafe<T>());
+        public GameSave Load<T>() where T:GameSave {
+            return LoadUnsafe<T>();
         }
 
         /// <summary>
@@ -85,13 +88,8 @@ namespace Yun.Data {
         /// Subscribe to Error event if you want to handle them
         /// </param>
         public void SaveAsync(Action callback = null) {
-            ThreadWorker worker = new ThreadWorker(Save);
-            worker.ThreadDone += (() => {
-                if(callback != null) callback();
-            });
-
-            var tr = new Thread(new ThreadStart(worker.Run));
-            tr.Start();
+            var t = new Task(Save);
+            t.RunAsync(null, callback);
         }
 
         /// <summary>
@@ -133,10 +131,12 @@ namespace Yun.Data {
             }
         }
 
-        private void LoadUnsafe<T>() where T:GameSave {
-            var loaded = GameSave.Load<T>(saveData);
+        private GameSave LoadUnsafe<T>() where T:GameSave {
+            var loaded = GameSave.Load<T>(saveName);
             if(loaded != null)
                 saveData = loaded;
+
+            return saveData;
         }
 #endregion
     }
